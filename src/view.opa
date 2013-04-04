@@ -50,8 +50,6 @@ module Events {
         categoryId = CategoryModel.new_category(newCategory)
         categoryId
     }
-    //   
-    // }
     
     newPost = ~{title, body, categoryId}
 
@@ -67,13 +65,7 @@ module SiteView {
 }
 
 module DomConstruction {
-  // function build_tag_elements(tags) {
-  //   List.map(
-  //     function(tag) {<li id=#{tag.tagId} class=tag-list-member>{tag.tag}</li>},
-  //     tags
-  //   )
 
-  // }  
 }
 
 module PostView {
@@ -81,7 +73,6 @@ module PostView {
     content = <div id=#allPosts onready={function(_) {
                 List.map(function(post) {
                   postCategory = /parlance/categories[{ categoryId:post.categoryId  }]/category
-                  postTags = TagModel.get_post_tags(post.postId)
                   // println(Debug.dump(postTags))
                   #allPosts =+  <div class=post-wrapper>
                                   <h2 class="post-title heading-text"><a href="/post/{post.postId}">{post.title}</></>
@@ -153,14 +144,8 @@ module PostView {
 
     void
   }
-  // function show_tags(tag) {
-  //   <a href="/tag/by_tag/{tag.tagId}>{tag.tag}</a>
-
-  //   void
-  // }
 
   function single_post(postDetails) {
-// println(Debug.dump(postDetails.tagList))
 // println(Debug.dump(postDetails))
 
     
@@ -180,13 +165,8 @@ module PostView {
       // see what this looks like
 
 
-    // List.iter(show_tags, postDetails.tagList)
-    // List.iter(function(tag) {
-    //   content =+ <a href="/tag/by_tag/{tag.tagId}>{tag.tag}</a>
-    // }, postDetails.tagList)
 
     DefaultView.page_template({postDetails.title}, content)
-                    // <div>tags:<ul>{DomConstruction.build_tag_elements(postDetails.tagList)}</></>
   }
 
   /** 
