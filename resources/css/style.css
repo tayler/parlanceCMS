@@ -1,0 +1,84 @@
+/****
+* global
+****/
+body {
+	background-image: url('/resources/img/cloth_alike.png');
+}
+h1, h2, h3, h4, h5, h6 {
+	font-family: 'Abel', sans-serif;
+	font-weight: 400;
+}
+.heading-text {
+	font-family: 'Abel', sans-serif;
+	font-weight: 400;
+}
+.body-copy {
+	font-family: 'Lora', serif;
+	font-size: 18px;
+	margin-top: -4px;
+}
+
+/****
+* template
+****/
+.navbar-inner {
+	background-image: none;
+	background-color: #FFFFFF;
+}
+.main-menu {
+	list-style: none;
+	margin-bottom: 0;
+}
+.menu-item {
+	margin-left: 15px;
+	line-height: 40px;
+	display: inline;
+}
+.menu-item .nav-link:link,
+.menu-item .nav-link:hover,
+.menu-item .nav-link:visited,
+.menu-item .nav-link:active {
+	color: #777777;
+}
+textarea {
+    width: 100%;
+}
+
+/****
+* home
+****/
+
+/****
+* posts
+****/
+.post-wrapper {
+	display: block;
+	background-color: #FFFFFF;
+	padding: 5px 10px 20px 10px;
+	border-radius: 2px;
+	margin: 0 auto 10px auto;
+}
+.post-wrapper .heading-text {
+	text-align: center;
+	font-size: 40px;
+}
+.post-wrapper .post-row {
+	margin-left: 0;
+}
+.post-wrapper .post-image-and-meta {
+}
+.post-wrapper .body-copy {
+	margin-left: 25px;
+}
+.post-wrapper .post-meta {
+	margin: -4px auto 0 auto;
+	padding: 5px 0 5px 0;
+}
+
+/****
+* login
+****/
+
+/****
+* admin
+****/
