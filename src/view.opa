@@ -46,14 +46,12 @@ module Events {
       case {false} :
         println(Debug.dump("you created a new category"))
 
-        // save new category and get id
         categoryId = CategoryModel.new_category(newCategory)
         categoryId
     }
     
     newPost = ~{title, body, categoryId}
 
-    // work on parser from dropbox as a database tutorial at blog.opalang.org
 
 
     PostModel.set_new_post(newPost)
@@ -73,7 +71,6 @@ module PostView {
     content = <div id=#allPosts onready={function(_) {
                 List.map(function(post) {
                   postCategory = /parlance/categories[{ categoryId:post.categoryId  }]/category
-                  // println(Debug.dump(postTags))
                   #allPosts =+  <div class=post-wrapper>
                                   <h2 class="post-title heading-text"><a href="/post/{post.postId}">{post.title}</></>
                                   <p>{post.dateAdded}</>
@@ -83,13 +80,11 @@ module PostView {
                 }, posts)
                 void
     }}></>;
-    // println(Debug.dump(posts))
     DefaultView.page_template("Post", content)
   }
 
   // markdown samples and explanation source: http://en.wikipedia.org/wiki/Markdown
   function create_post(allCategories) {
-    // println(Debug.dump(allCategories))
 
     content = <h2 class="post-title heading-text">Create New Post</h2>
               <form class=form-horizontal>
@@ -146,8 +141,6 @@ module PostView {
   }
 
   function single_post(postDetails) {
-// println(Debug.dump(postDetails))
-
     
     content = <div class="span12 post-wrapper">
                 <h2 class="post-title heading-text">{postDetails.title}</>
@@ -162,7 +155,6 @@ module PostView {
                   <div class="span5 body-copy post-body">{Markdown.xhtml_of_string(Markdown.default_options, postDetails.body)}</>
                 </>
               </>
-      // see what this looks like
 
 
 
@@ -182,16 +174,9 @@ module PostView {
 module CategoryView {
   function posts_by_category(relatedPosts) {
     content = <div>Hello</>
-    // postData = DbSet.iterator(relatedPosts) |> Iter.to_list
 
-    // List.map(function(postDetails) {
-
-
-    // }, postData)
     DefaultView.page_template("Posts related to category", content)
 
-
-    // println(Debug.dump(categoryId))
   }
 }
 

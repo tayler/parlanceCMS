@@ -73,8 +73,6 @@ module AdminController {
   }
 }
 
-
-// removed from { css: ... } for testing: , "http://fonts.googleapis.com/css?family=Abel", "http://fonts.googleapis.com/css?family=Lora"
 Server.start(Server.http, [
   { register:
     [ { doctype: { html5 } },
