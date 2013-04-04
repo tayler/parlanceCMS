@@ -6,9 +6,6 @@ type Post = { int postId, string title, string body, int categoryId, int userId,
 type Comment = {int postId, string comment}
 // type Post_comment = {int postCommentId, int postId, int commentId}
 
-type Tag = {int tagId, string tag}
-type Post_tag = {int postTagId, int postId, int tagId}
-
 type Category = {int categoryId, string category}
 
 database parlance {
@@ -25,17 +22,6 @@ database parlance {
 	// many comments to one post
 	// can add to list of comments with /movie/cast/stars <+ { name: "James Caan", birthyear: 1940 }
 	Comment /comments[{ postId }] 
-
-	// int keys/post_comment_key
-	// Post_comment /post_comment
-	
-	// tags
-	int /keys/tag_key
-	Tag /tags[{ tagId }]
-
-	// post_tag is a many-to-many relationship, so I need an associative table
-	int /keys/post_tag_key
-	Post_tag /post_tag[{ postTagId }]
 
 	// categories
 	// one category to many posts
@@ -56,10 +42,6 @@ module PostModel {
 
 
 		// TODO: add userId to entry
-
-	    separatedTags = String.explode(",", newPost.tags)
-
-		TagModel.save_tags(separatedTags, postKey)
 
 		void
 
@@ -83,20 +65,9 @@ module PostModel {
 		postCategory = /parlance/categories[{ categoryId:categoryId }]/category
 
 		// dbset(Comment, _) commentSet = /parlance/comments
-
-		// gives just the tagId as an int (shouldn't it give me a set of tagIds - assuming there is more than one with that postId - It wouldn't let me make this a dbset type)
-		// tagId = /parlance/post_tag[postId == requestedPostId]/tagId
-		// tagIds = /parlance/post_tag[postId == requestedPostId]/tagId
-
-		// tagList = get_tags(tagIds)
-
-		// println(Debug.dump(tagIds))
-
-		// gives the whole record at that postId like this: { size`: 3, tagId: 3, postTagId: 3, postId: 3, }
-		// dbset(Post_tag, _) = tagId = /parlance/post_tag[postId == requestedPostId]
 		
 		// ~commentSet == commentSet: commentSet
-		postDetails = {title: postTitle, body: postBody, ~categoryId, category: postCategory, dateAdded: postDate} // ~tagList, ~commentSet, 
+		postDetails = {title: postTitle, body: postBody, ~categoryId, category: postCategory, dateAdded: postDate} // ~commentSet, 
 
 		postDetails
 	}
@@ -132,23 +103,6 @@ module PostModel {
 
 		relatedPostsList
 	}
-
-	function get_posts_by_tag(requestedTagId) {
-		postIds = /parlance/post_tag[ tagId == requestedTagId ]/postId
-		postIdsList = DbSet.iterator(postIds) |> Iter.to_list
-		relatedPosts = List.empty
-
-		relatedPosts = List.map(function(requestedPostId) {
-			post = /parlance/posts[ postId == requestedPostId]
-			postList = [post | relatedPosts]
-			postList
-		}, postIdsList)
-
-		println(Debug.dump(relatedPosts))
-
-		relatedPosts
-	}
-
 	// function get_associated(allPosts) {
 	// 	println(Debug.dump(allPosts))
 	// }
@@ -200,78 +154,3 @@ module CategoryModel {
 
 }
 
-module TagModel {
-	function save_tags(tags, postKey) {
-		List.map(function(tag) {
-			trimmedTag = String.trim(tag)
-			// does the tag exist ya?
-			// println(Debug.dump(trimmedTag))
-			
-			exists = /parlance/tags[ tag == tag ]
-			existsList = DbSet.iterator(exists) |> Iter.to_list
-			// println(Debug.dump(existsList))
-			// println(Debug.dump(List.is_empty(existsList)))
-			
-			// if no save tag 
-			tagKey = match (List.is_empty(existsList)) {
-				case {true} :
-					println(Debug.dump("you made a new tag"))
-					/parlance/keys/tag_key++
-					tagKey = /parlance/keys/tag_key
-					/parlance/tags[{ tagId:tagKey }] <- { tagId:tagKey, tag:tag }
-
-					tagKey
-
-				case {false} :
-					println(Debug.dump("you used an existing tag"))
-					tagMax = List.max(existsList)
-					// println(Debug.dump(tagMax))
-					tagKey = tagMax.tagId
-					// println(Debug.dump(tagKey))
-
-					tagKey
-			}
-			
-			// associate with postId
-			/parlance/keys/post_tag_key++
-			postTagKey = /parlance/keys/post_tag_key
-			/parlance/post_tag[{ postTagId:postTagKey }] <- { postId:postKey, tagId:tagKey }
-			
-		}, tags)
-	}
-
-// 	function get_tags(tagIds) {
-// 		tagIdList = DbSet.iterator(tagIds) |> Iter.to_list
-// 		tagBuild = List.empty
-
-// 		// maybe change this to tagIdList.iter or whatever; handle it the dbset way instead of converting to List
-// 		allTagList = List.map(function(tagId) {
-// 			// get the tags that have that tagId
-// 			tagSet = /parlance/tags[{ tagId:tagId }]
-// // println(Debug.dump(tagSet))
-// 			finalTagList = [ tagSet | tagBuild ]
-// 			finalTagList
-// 		}, tagIdList)
-// 		allTagList
-// 	}
-
-	// this is giving me a list that is too deep. I think I'd have to iterate through two levels to get at these tags
-	// function get_post_tags(requestedPostId) {
-	// 	println(Debug.dump(requestedPostId))
-	// 	tagIds = /parlance/post_tag[ postId == requestedPostId ]/tagId
-	// 	tagIdsList = DbSet.iterator(tagIds) |> Iter.to_list
-	// 	tags = []
-
-	// 	tags = List.map(function(requestedTagId) {
-	// 		tag = /parlance/tags[ tagId == requestedTagId]
-	// 		println(Debug.dump(tag))
-	// 		tagList = [tag | tags]
-	// 		println(Debug.dump(tagList))
-	// 		tagList
-	// 	}, tagIdsList)
-
-	// 	tags
-	// }
-}
-
-// I think type intmap records can only be accessed by the int or a range of ints. So can't search for categoryId by a postId that is in the same map

@@ -10,7 +10,6 @@ module RouteController {
       case "/post/edit/" postId = Rule.integer: PostController.edit_post(postId)
       // case "/delete" : PostController.delete_post()
       case "/category/" categoryId = Rule.integer: PostController.posts_by_category(categoryId)
-      // case "/tag/" tagId = Rule.integer: PostController.posts_by_tag(tagId)
       case "/login" : LoginController.login()
       case "/admin" : AdminController.dashboard()
       case "/admin/options" : AdminController.options()
@@ -51,11 +50,6 @@ module PostController {
 
     PostView.post_list(relatedPosts)
   }
-  // function posts_by_tag(tagId) {
-  //   // relatedPosts = PostModel.get_posts_by_tag(tagId)
-
-  //   PostView.post_list(relatedPosts)
-  // }
 
 
 }

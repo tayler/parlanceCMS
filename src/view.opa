@@ -34,7 +34,6 @@ module Events {
     body = Dom.get_value(#postBody)
     categoryIdString = Dom.get_value(#postCategory)
     newCategory = Dom.get_value(#postCategoryNew)
-    tags = Dom.get_value(#postTags)
 
 
 
@@ -54,7 +53,7 @@ module Events {
     //   
     // }
     
-    newPost = ~{title, body, categoryId, tags}
+    newPost = ~{title, body, categoryId}
 
     // work on parser from dropbox as a database tutorial at blog.opalang.org
 
@@ -89,14 +88,7 @@ module PostView {
                                   <p>{post.dateAdded}</>
                                   <div class="body-copy post-body">{Markdown.xhtml_of_string(Markdown.default_options, post.body)}</>
                                   <div>category: <a href="/category/{post.categoryId}">{postCategory}</></>
-                                  <div id=#postTags>tags: </>
                                 </>
-                  List.map(function(tag) {
-                    println(Debug.dump(tag))
-                    // it's appending all the tags to the first instance of #postTags. I don't think I can use an id to identify this DOM element because it has to 
-                    // append to each section.
-                    #allPosts =+ <div>tag</>
-                  }, postTags)
                 }, posts)
                 void
     }}></>;
@@ -145,9 +137,6 @@ module PostView {
                 <span class=help-block>Add Category</span>
                 <input id=#postCategoryNew type=text placeholder="Post Category" />
                 
-                <span class=help-block>Tags (separated by a comma)</span>
-                <input id=#postTags type=text placeholder="tag1, tag2, tag3, etc." />
-
                 <div>
                   <a id=#submitNewPost class=btn onclick={ Events.submit_post(_) }>Post</a>
                 </div>
