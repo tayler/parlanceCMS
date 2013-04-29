@@ -10,6 +10,7 @@ module RouteController {
       case "/post/edit/" postId = Rule.integer: PostController.edit_post(postId)
       // case "/delete" : PostController.delete_post()
       case "/category/" categoryId = Rule.integer: PostController.posts_by_category(categoryId)
+      case "/signup" : SignupController.signup()
       case "/login" : LoginController.login()
       case "/admin" : AdminController.dashboard()
       case "/admin/options" : AdminController.options()
@@ -56,7 +57,11 @@ module PostController {
 
 module CategoryController {
 }
-
+module SignupController {
+  function signup() {
+    SignupView.signupForm()
+  }
+}
 module LoginController {
   function login() {
     LoginView.login()
@@ -79,7 +84,7 @@ Server.start(Server.http, [
   { register:
     [ { doctype: { html5 } },
       { js: [ ] },
-      { css: [ "/resources/css/style.css"] } 
+      { css: [ "/resources/css/style.css"] }
     ]
   },
   { resources: RouteController.resources },

@@ -1,8 +1,8 @@
 module DefaultView {
 
-  function page_template(title, content) {
+  function page_template(title, content, notice) {
     title = title + " :: ParlanceCMS"
-      html = 
+      html =
       <div class="navbar navbar-top">
         <div class=navbar-inner>
           <div class=container>
@@ -10,6 +10,7 @@ module DefaultView {
             <ul class="main-menu pull-right">
               <li class=menu-item><a class=nav-link href="/post/create">New Post</></>
               <li class=menu-item><a class=nav-link href="/post/edit">Edit Post</></>
+              <li class=menu-item><a class=nav-link href="/signup">Sign Up</></>
               <li class=menu-item><a class=nav-link href="/login">Login</></>
               <li class=menu-item><a class=nav-link href="/admin">Admin</></>
               <li class=menu-item><a class=nav-link href="/admin/options">Options</></>
@@ -20,6 +21,7 @@ module DefaultView {
       <div id=#main class="container row content">
         {content}
       </div>
+      <span id=#notice class=container>{notice}</span>
     Resource.page(title, html)
   }
 
@@ -50,7 +52,7 @@ module Events {
         categoryId = CategoryModel.new_category(newCategory)
         categoryId
     }
-    
+
     newPost = ~{title, body, categoryId}
 
     // work on parser from dropbox as a database tutorial at blog.opalang.org
@@ -61,7 +63,12 @@ module Events {
 }
 
 module SiteView {
-
+  function alert(message, alertClass) {
+  <div class="alert alert-{alertClass}">
+    <button type="button" class="close" data-dismiss="alert">×</button>
+      {message}
+  </div>
+  }
 }
 
 module DomConstruction {
@@ -84,7 +91,7 @@ module PostView {
                 void
     }}></>;
     // println(Debug.dump(posts))
-    DefaultView.page_template("Post", content)
+    DefaultView.page_template("Post", content, <></>)
   }
 
   // markdown samples and explanation source: http://en.wikipedia.org/wiki/Markdown
@@ -95,7 +102,7 @@ module PostView {
               <form class=form-horizontal>
                 <span class=help-block>Give the post a title</span>
                 <input class=span6 id=#postTitle type=text placeholder="Post Title" />
-                
+
                 <span class=help-block>Post body goes here</span>
                 <textarea id=#postBody rows="10" class=span6></textarea>
                 <ul class=markdown-instructions>
@@ -121,19 +128,19 @@ module PostView {
                   <li>External links: [link text here](link.address.here) (e.g., [Markdown](http://en.wikipedia.com/wiki/Markdown))</>
                   <li>Images: ![Alt text](/path/to/img.jpg)</>
                 </>
-                
+
                 <span class=help-block>Use Existing Category</span>
                 <select id=#postCategory onready={ function(_) { add_categories_options(allCategories) }}></>
-                
+
                 <span class=help-block>Add Category</span>
                 <input id=#postCategoryNew type=text placeholder="Post Category" />
-                
+
                 <div>
                   <a id=#submitNewPost class=btn onclick={ Events.submit_post(_) }>Post</a>
                 </div>
               </form>
-         
-    DefaultView.page_template("New Post", content)
+
+    DefaultView.page_template("New Post", content, <></>)
 
   }
 
@@ -148,7 +155,7 @@ module PostView {
   function single_post(postDetails) {
 // println(Debug.dump(postDetails))
 
-    
+
     content = <div class="span12 post-wrapper">
                 <h2 class="post-title heading-text">{postDetails.title}</>
                 <div class="row post-row">
@@ -157,26 +164,23 @@ module PostView {
                     <div class=post-author>Author: </>
                     <div class=post-date>{postDetails.dateAdded}</>
                     <div class=post-category>Post Category: <a href="/category/{postDetails.categoryId}">{postDetails.category}</></>
-                    
+
                   </>
                   <div class="span5 body-copy post-body">{Markdown.xhtml_of_string(Markdown.default_options, postDetails.body)}</>
                 </>
               </>
-      // see what this looks like
 
-
-
-    DefaultView.page_template({postDetails.title}, content)
+    DefaultView.page_template({postDetails.title}, content, <></>)
   }
 
-  /** 
-  * edit_post 
+  /**
+  * edit_post
   */
   function edit_post(post) {
     content = <div>This is the edit_post view. {post}</div>
-    DefaultView.page_template("Edit Post", content)   
+    DefaultView.page_template("Edit Post", content, <></>)
   }
-  
+
 }
 
 module CategoryView {
@@ -188,17 +192,80 @@ module CategoryView {
 
 
     // }, postData)
-    DefaultView.page_template("Posts related to category", content)
+    DefaultView.page_template("Posts related to category", content, <></>)
 
 
     // println(Debug.dump(categoryId))
+  }
+}
+module SignupView {
+  private fld_username =
+    Field.text_field({Field.new with
+      label: "Username",
+      required: {with_msg: <>Please enter a username.</>},
+      hint: <>Your username will be displayed as the author of your posts</>
+    })
+
+  private fld_email =
+    Field.email_field({Field.new with
+      label: "Email",
+      required: {with_msg: <>Please enter a valid email address.</>},
+      hint: <>Your activation link will be sent to this address.</>
+    })
+
+  private fld_passwd =
+    Field.passwd_field({Field.new with
+      label: "Password",
+      required: {with_msg: <>Please enter your password.</>},
+      hint: <>Password should be at least 6 characters long and contain at least one digit.</>,
+      validator: {passwd: Field.default_passwd_validator}
+    })
+
+  private fld_passwd2 =
+    Field.passwd_field({Field.new with
+      label: "Repeat password",
+      required: {with_msg: <>Please repeat your password.</>},
+      validator: {equals: fld_passwd, err_msg: <>Your passwords do not match.</>}
+    })
+
+  function signupForm() {
+    form = Form.make(signup, {})
+    fld = Field.render(form, _)
+    form_body =
+      <>
+        {fld(fld_username)}
+        {fld(fld_email)}
+        {fld(fld_passwd)}
+        {fld(fld_passwd2)}
+        <a href="#" class="btn btn-primary btn-large" onclick={Form.submit_action(form)}>Sign up</>
+        <div id=#notice></>
+      </>
+    content =
+      Form.render(form, form_body)
+
+    DefaultView.page_template("Sign up", content, <></>)
+  }
+  private client function signup(_) {
+    email = Field.get_value(fld_email) ? error("Cannot read form email")
+    username = Field.get_value(fld_username) ? error("Cannot read form name")
+    passwd = Field.get_value(fld_passwd) ? error("Cannot read form passwd")
+    newUser = ~{email, username, passwd}
+
+    #notice = match (UserModel.register(newUser)) {
+      case {success: _}:
+        SiteView.alert("Congratulations! You are successfully registered. You will receive an email with account activation instructions shortly.", "success")
+        void
+      case {failure: msg}:
+        SiteView.alert("Your registration failed: {msg}", "error")
+        void
+    }
   }
 }
 
 module LoginView {
     function login() {
       content = <div>This is the login view</div>
-      DefaultView.page_template("Login", content)     
+      DefaultView.page_template("Login", content, <></>)
     }
 
 }
@@ -206,12 +273,12 @@ module LoginView {
 module AdminView {
   function dashboard() {
       content = <div>This is the dashboard view</div>
-      DefaultView.page_template("Admin", content)
+      DefaultView.page_template("Admin", content, <></>)
   }
 
   function options() {
       content = <div>This is the options view</div>
-      DefaultView.page_template("Options", content)
+      DefaultView.page_template("Options", content, <></>)
   }
 
 }

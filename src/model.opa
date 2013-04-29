@@ -1,4 +1,16 @@
-type User = {int userId, string username, string password}
+
+// abstract type means it can only be manipulated with functions in the package in which the declaration occurs
+abstract type User.name = string
+abstract type User.status = {active} or {string activationCode}
+
+abstract type User.info = {
+	Email.email email,
+	string username,
+	string passwd,
+	User.status status
+}
+
+// type User = {int userId, string username, string password}
 
 // add userId or a post_userId collection
 type Post = { int postId, string title, string body, int categoryId, int userId, string dateAdded }
@@ -10,25 +22,25 @@ type Category = {int categoryId, string category}
 
 database parlance {
 
-	User /user
+	User.info /users[{username}]
 
 	// posts
 	int /keys/post_key
 	Post /posts[{ postId }]
-	
+
 	// comments
 	// int /keys/comment_key
 
 	// many comments to one post
 	// can add to list of comments with /movie/cast/stars <+ { name: "James Caan", birthyear: 1940 }
-	Comment /comments[{ postId }] 
+	Comment /comments[{ postId }]
 
 	// categories
 	// one category to many posts
 	int /keys/category_key
 	// changed primary key to category from categoryId; ?/parlance/categories[]
 	Category /categories[{ categoryId }]
-	
+
 }
 
 module PostModel {
@@ -65,9 +77,9 @@ module PostModel {
 		postCategory = /parlance/categories[{ categoryId:categoryId }]/category
 
 		// dbset(Comment, _) commentSet = /parlance/comments
-		
+
 		// ~commentSet == commentSet: commentSet
-		postDetails = {title: postTitle, body: postBody, ~categoryId, category: postCategory, dateAdded: postDate} // ~commentSet, 
+		postDetails = {title: postTitle, body: postBody, ~categoryId, category: postCategory, dateAdded: postDate} // ~commentSet,
 
 		postDetails
 	}
@@ -99,7 +111,7 @@ module PostModel {
 
 		relatedPostsList = DbSet.iterator(relatedPosts) |> Iter.to_list
 
-		
+
 
 		relatedPostsList
 	}
@@ -152,5 +164,47 @@ module CategoryModel {
 		categoryKey
 	}
 
+}
+
+module UserModel {
+	exposed function outcome register(user) {
+		activationCode = Random.string(15)
+		user = {
+			email: user.email,
+			username: user.username,
+			passwd: user.passwd,
+			status: {~activationCode}
+		}
+		x = ?/parlance/users[{username: user.username}]
+		match (x) {
+			case {none}:
+				/parlance/users[{username: user.username}] <- user
+				send_registration_email({~activationCode, username:user.username, email: user.email})
+				{success}
+			case {some: _}:
+				{failure: "A user with the given name already exists."}
+		}
+	}
+
+	private function send_registration_email(args) {
+		from = Email.of_string("no-reply@{Data.main_host}")
+		subject = "New Parlance Registration"
+		email =
+			<p>Hello {args.username}!</p>
+			<p>Thank you for registering with Parlance.</p>
+			<p>Activate your account by clicking on
+				<a href="http://{Data.main_host}{Data.main_port}/activation/{args.activationCode}">
+              		this link
+				</a>.
+          	</p>
+         content = {html: email}
+         continuation = function(_) { void }
+         SmtpClient.try_send_async(from, args.email, subject, content, Email.default_options, continuation)
+	}
+}
+
+module Data {
+	main_host = "localhost"
+	main_port = ":8080"
 }
 
