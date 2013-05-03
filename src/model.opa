@@ -9,6 +9,11 @@ abstract type User.info = {
 	string passwd,
 	User.status status
 }
+// so we don't have to pass all the User.info around each time
+type User.t = { Email.email email, User.name username }
+type User.logged = {guest} or {User.t user}
+// guest is initial value for every user
+private UserContext.t(User.logged) logged_user = UserContext.make({guest})
 
 // type User = {int userId, string username, string password}
 
@@ -169,11 +174,17 @@ module CategoryModel {
 module UserModel {
 	exposed function outcome register(user) {
 		activationCode = Random.string(15)
+		status =
+		#<Ifstatic:NO_ACTIVATION_MAIL>
+		{active}
+		#<Else>
+		{~activationCode}
+		#<End>
 		user = {
 			email: user.email,
 			username: user.username,
 			passwd: user.passwd,
-			status: {~activationCode}
+			~status
 		}
 		x = ?/parlance/users[{username: user.username}]
 		match (x) {
@@ -200,6 +211,56 @@ module UserModel {
          content = {html: email}
          continuation = function(_) { void }
          SmtpClient.try_send_async(from, args.email, subject, content, Email.default_options, continuation)
+	}
+
+	exposed function outcome activate_account(activationCode) {
+		user = /parlance/users[status == ~{activationCode}]
+			|> DbSet.iterator
+			|> Iter.to_list
+			|> List.head_opt
+		match (user) {
+			case {none}: {failure}
+			case {some: user}:
+			/parlance/users[{username: user.username}] <- {user with status: {active}}
+			{success}
+		}
+	}
+
+	// get username and email out of User.info
+	private function User.t mk_view(User.info info) {
+		{username: info.username, email: info.email}
+	}
+
+	exposed function outcome(User.t, string) login(username, passwd) {
+		x = ?/parlance/users[~{username}]
+		match (x) {
+			case {none}: {failure: "The username/password combination is invalid."}
+			case {some: user}:
+				match (user.status) {
+					case {activationCode: _}:
+					{failure: "You need to activate your account by clicking the link we sent you by email."}
+					case {active}:
+						if (user.passwd == passwd) {
+							user_view = mk_view(user)
+							UserContext.set(logged_user, {user: user_view})
+							{success: user_view}
+						} else {
+							{failure: "The username/password combination is invalid."}
+						}
+					}
+		}
+	}
+
+	function string get_name(User.t user) {
+		user.username
+	}
+
+	function User.logged get_logged_user() {
+		UserContext.get(logged_user)
+	}
+
+	function logout() {
+		UserContext.set(logged_user, {guest})
 	}
 }
 

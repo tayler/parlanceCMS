@@ -11,15 +11,13 @@ module RouteController {
       // case "/delete" : PostController.delete_post()
       case "/category/" categoryId = Rule.integer: PostController.posts_by_category(categoryId)
       case "/signup" : SignupController.signup()
+      case "/activation/" activationCode = Rule.alphanum_string: SignupController.activation(activationCode)
       case "/login" : LoginController.login()
       case "/admin" : AdminController.dashboard()
       case "/admin/options" : AdminController.options()
       // default : View.default_page()
     }
   }
-}
-
-module Site {
 }
 
 module PostController {
@@ -29,8 +27,14 @@ module PostController {
   }
 
   function create_post() {
-    allCategories = CategoryModel.get_all_categories()
-    PostView.create_post(allCategories)
+    match (UserModel.get_logged_user()) {
+      case {guest}:
+        // should redirect to create post when they've logged in
+        LoginView.loginForm("/post/create")
+      case ~{user}:
+        allCategories = CategoryModel.get_all_categories()
+        PostView.create_post(allCategories)
+    }
   }
 
   function single_post(postId) {
@@ -52,7 +56,6 @@ module PostController {
     PostView.post_list(relatedPosts)
   }
 
-
 }
 
 module CategoryController {
@@ -61,16 +64,26 @@ module SignupController {
   function signup() {
     SignupView.signupForm()
   }
+  function activation(activationCode) {
+    SignupView.activate_user(activationCode)
+  }
 }
 module LoginController {
   function login() {
-    LoginView.login()
+    LoginView.loginForm("/")
   }
 }
 
 module AdminController {
   function dashboard() {
-    AdminView.dashboard()
+    match (UserModel.get_logged_user()) {
+      case {guest}:
+        // should redirect to dash when they've logged in
+        LoginView.loginForm("/admin")
+      case ~{user}:
+        AdminView.dashboard()
+    }
+
   }
 
   function options() {

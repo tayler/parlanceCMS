@@ -6,7 +6,7 @@ module DefaultView {
       <div class="navbar navbar-top">
         <div class=navbar-inner>
           <div class=container>
-            <a class="brand heading-text" href="/">parlanceCMS</>
+            {Topbar.html()}
             <ul class="main-menu pull-right">
               <li class=menu-item><a class=nav-link href="/post/create">New Post</></>
               <li class=menu-item><a class=nav-link href="/post/edit">Edit Post</></>
@@ -25,6 +25,32 @@ module DefaultView {
     Resource.page(title, html)
   }
 
+}
+
+module Topbar {
+  function html() {
+    <a class="brand heading-text" href="/">parlanceCMS</a> <+>
+    user_menu()
+  }
+
+  function user_menu() {
+    match (UserModel.get_logged_user()) {
+      case {guest}: <li class=menu-item><a class=nav-link href="/login">Login</></>
+      case ~{user}: user_box(user.username)
+    }
+  }
+
+  private function user_box(username) {
+    id = Dom.fresh_id()
+    <ul id={id} class="nav pull-right">
+      <li><a onclick={logout} href="#">Sign out</></>
+    </>
+  }
+
+  private function logout(_) {
+    UserModel.logout()
+    Client.reload()
+  }
 }
 
 module Events {
@@ -64,15 +90,11 @@ module Events {
 
 module SiteView {
   function alert(message, alertClass) {
-  <div class="alert alert-{alertClass}">
-    <button type="button" class="close" data-dismiss="alert">×</button>
-      {message}
-  </div>
+    <div class="alert alert-{alertClass}">
+      <button type="button" class="close" data-dismiss="alert">×</button>
+        {message}
+    </div>
   }
-}
-
-module DomConstruction {
-
 }
 
 module PostView {
@@ -198,6 +220,7 @@ module CategoryView {
     // println(Debug.dump(categoryId))
   }
 }
+
 module SignupView {
   private fld_username =
     Field.text_field({Field.new with
@@ -245,6 +268,7 @@ module SignupView {
 
     DefaultView.page_template("Sign up", content, <></>)
   }
+
   private client function signup(_) {
     email = Field.get_value(fld_email) ? error("Cannot read form email")
     username = Field.get_value(fld_username) ? error("Cannot read form name")
@@ -254,20 +278,71 @@ module SignupView {
     #notice = match (UserModel.register(newUser)) {
       case {success: _}:
         SiteView.alert("Congratulations! You are successfully registered. You will receive an email with account activation instructions shortly.", "success")
-        void
       case {failure: msg}:
         SiteView.alert("Your registration failed: {msg}", "error")
-        void
     }
+  }
+
+  function activate_user(activationCode) {
+    notice =
+      match (UserModel.activate_account(activationCode)) {
+        case {success: _}:
+          SiteView.alert("Your account is activated now.", "success") <+>
+            <div class="well form-wrap">
+              {LoginView.loginForm(_)}
+            </div>
+        case {failure: _}:
+          SiteView.alert("Activation code is invalid.", "error")
+
+      }
+    DefaultView.page_template("Account activation", <></>, notice)
+
   }
 }
 
 module LoginView {
-    function login() {
-      content = <div>This is the login view</div>
-      DefaultView.page_template("Login", content, <></>)
-    }
+  private fld_username = Field.text_field({Field.new with
+    label: "Username",
+    required: {with_msg: <>Please enter your username.</>} })
+  private fld_passwd = Field.passwd_field({Field.new with
+    label: "Password",
+    required: {with_msg: <>Please enter your password.</>} })
 
+  function loginForm(redirect) {
+    form = Form.make(login(some(redirect), _), {})
+    fld = Field.render(form, _)
+    form_body =
+      <>
+        {fld(fld_username)}
+        {fld(fld_passwd)}
+        <div id=#signin_result />
+        <a href="#" class="btn btn-primary btn-large" onclick={Form.submit_action(form)}>Sign in</>
+      </>
+      content = Form.render(form, form_body)
+    DefaultView.page_template("Login", content, <></>)
+  }
+
+  private function login(redirect, _) {
+    // #signin_result = <></> // to get rid of the msg box, so they see that this error is new
+    username = Field.get_value(fld_username) ? error("Cannot get login")
+    passwd = Field.get_value(fld_passwd) ? error("Cannot get passwd")
+    match (UserModel.login(username, passwd)) {
+      case {failure: msg}:
+        #signin_result =
+          <div class="alert alert-error">
+            {msg}
+          </div>
+        // Dom.transition(#signin_result, Dom.Effect.sequence([
+        //   Dom.Effect.with_duration({immediate}, Dom.Effect.hide()),
+        //   Dom.Effect.with_duration({slow}, Dom.Effect.fade_in())
+        // ])) |> ignore
+      case {success: _}:
+        match (redirect) {
+          case {none}: Client.reload()
+          case {some: url}: Client.goto(url)
+        }
+    }
+  }
 }
 
 module AdminView {
