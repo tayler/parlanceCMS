@@ -7,14 +7,14 @@ module RouteController {
       case "/" : PostController.all_posts()
       case "/post/" postId = Rule.integer: PostController.single_post(postId)
       case "/post/create" : PostController.create_post()
-      case "/post/edit/" postId = Rule.integer: PostController.edit_post(postId)
+      // case "/post/edit/" postId = Rule.integer: PostController.edit_post(postId)
       // case "/delete" : PostController.delete_post()
       case "/category/" categoryId = Rule.integer: PostController.posts_by_category(categoryId)
       // case "/signup" : SignupController.signup()
-      case "/activation/" activationCode = Rule.alphanum_string: SignupController.activation(activationCode)
+      // case "/activation/" activationCode = Rule.alphanum_string: SignupController.activation(activationCode)
       case "/login" : LoginController.login()
-      case "/admin" : AdminController.dashboard()
-      case "/admin/options" : AdminController.options()
+      // case "/admin" : AdminController.dashboard()
+      // case "/admin/options" : AdminController.options()
       // default : View.default_page()
     }
   }

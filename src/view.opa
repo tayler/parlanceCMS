@@ -31,7 +31,7 @@ module Topbar {
   function user_menu() {
     match (UserModel.get_logged_user()) {
       case {guest}:
-        <li class=menu-item><a class=nav-link href="/signup">Sign Up</></>
+        <!-- <li class=menu-item><a class=nav-link href="/signup">Sign Up</></> -->
         <li class=menu-item><a class=nav-link href="/login">Login</></>
       case ~{user}: user_box(user.username)
     }
@@ -278,11 +278,11 @@ module SignupView {
         {fld(fld_email)}
         {fld(fld_passwd)}
         {fld(fld_passwd2)}
-        <a href="#" class="btn btn-primary btn-large" onclick={Form.submit_action(form)}>Sign up</>
         <div id=#notice></>
       </>
     content =
-      Form.render(form, form_body)
+      Form.render(form, form_body) <+>
+      <a href="#" class="btn btn-primary btn-large" onclick={Form.submit_action(form)}>Sign up</>
 
     DefaultView.page_template("Sign up", content, <></>)
   }
@@ -332,9 +332,11 @@ module LoginView {
         {fld(fld_username)}
         {fld(fld_passwd)}
         <div id=#signin_result />
-        <a href="#" class="btn btn-primary btn-large" onclick={Form.submit_action(form)}>Sign in</>
       </>
-      content = Form.render(form, form_body)
+      content =
+      Form.render(form, form_body) <+>
+      <a href="#" class="btn btn-primary btn-large" onclick={Form.submit_action(form)}>Sign in</>
+
     DefaultView.page_template("Login", content, <></>)
   }
 
