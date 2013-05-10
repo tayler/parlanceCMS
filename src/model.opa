@@ -18,7 +18,7 @@ private UserContext.t(User.logged) logged_user = UserContext.make({guest})
 // type User = {int userId, string username, string password}
 
 // add userId or a post_userId collection
-type Post = { int postId, string title, string body, int categoryId, int userId, string dateAdded }
+type Post = { int postId, string title, string body, int categoryId, string author, string dateAdded }
 
 type Comment = {int postId, string comment}
 // type Post_comment = {int postCommentId, int postId, int commentId}
@@ -50,17 +50,17 @@ database parlance {
 
 module PostModel {
 
-	function set_new_post(newPost) {
+	exposed function outcome set_new_post(newPost) {
 		string dateAdded = Date.to_string(Date.now())
 
 		/parlance/keys/post_key++
 		postKey = /parlance/keys/post_key
-		/parlance/posts[{ postId:postKey }] <- { title:newPost.title, body:newPost.body, categoryId:newPost.categoryId, userId:1, ~dateAdded }
+		/parlance/posts[{ postId:postKey }] <- { title:newPost.title, body:newPost.body, categoryId:newPost.categoryId, author:newPost.author, ~dateAdded }
 
+		{success}
 
 		// TODO: add userId to entry
 
-		void
 
 	}
 
@@ -77,6 +77,7 @@ module PostModel {
 		postDate = /parlance/posts[{ postId:requestedPostId }]/dateAdded
 		postTitle = /parlance/posts[{ postId:requestedPostId }]/title
 		postBody = /parlance/posts[{ postId:requestedPostId }]/body
+		postAuthor = /parlance/posts[{ postId:requestedPostId}]/author
 
 		categoryId = /parlance/posts[{ postId:requestedPostId }]/categoryId
 		postCategory = /parlance/categories[{ categoryId:categoryId }]/category
@@ -84,7 +85,7 @@ module PostModel {
 		// dbset(Comment, _) commentSet = /parlance/comments
 
 		// ~commentSet == commentSet: commentSet
-		postDetails = {title: postTitle, body: postBody, ~categoryId, category: postCategory, dateAdded: postDate} // ~commentSet,
+		postDetails = {title: postTitle, body: postBody, author: postAuthor, ~categoryId, category: postCategory, dateAdded: postDate} // ~commentSet,
 
 		postDetails
 	}

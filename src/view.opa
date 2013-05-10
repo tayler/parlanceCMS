@@ -7,21 +7,13 @@ module DefaultView {
         <div class=navbar-inner>
           <div class=container>
             {Topbar.html()}
-            <ul class="main-menu pull-right">
-              <li class=menu-item><a class=nav-link href="/post/create">New Post</></>
-              <li class=menu-item><a class=nav-link href="/post/edit">Edit Post</></>
-              <li class=menu-item><a class=nav-link href="/signup">Sign Up</></>
-              <li class=menu-item><a class=nav-link href="/login">Login</></>
-              <li class=menu-item><a class=nav-link href="/admin">Admin</></>
-              <li class=menu-item><a class=nav-link href="/admin/options">Options</></>
-            </>
           </div>
         </div>
       </div>
+      <span id=#notice class=container>{notice}</span>
       <div id=#main class="container row content">
         {content}
       </div>
-      <span id=#notice class=container>{notice}</span>
     Resource.page(title, html)
   }
 
@@ -29,13 +21,18 @@ module DefaultView {
 
 module Topbar {
   function html() {
-    <a class="brand heading-text" href="/">parlanceCMS</a> <+>
-    user_menu()
+    <a class="brand heading-text" href="/">parlanceCMS</a>
+    <ul class="main-menu pull-right">
+      {user_menu()}
+    </>
+
   }
 
   function user_menu() {
     match (UserModel.get_logged_user()) {
-      case {guest}: <li class=menu-item><a class=nav-link href="/login">Login</></>
+      case {guest}:
+        <li class=menu-item><a class=nav-link href="/signup">Sign Up</></>
+        <li class=menu-item><a class=nav-link href="/login">Login</></>
       case ~{user}: user_box(user.username)
     }
   }
@@ -43,7 +40,12 @@ module Topbar {
   private function user_box(username) {
     id = Dom.fresh_id()
     <ul id={id} class="nav pull-right">
-      <li><a onclick={logout} href="#">Sign out</></>
+      <li class=menu-item>Hello {username}!</>
+      <li class=menu-item><a class=nav-link href="/post/create">New Post</></>
+      <li class=menu-item><a class=nav-link href="/post/edit">Edit Post</></>
+      <li class=menu-item><a class=nav-link href="/admin">Admin</></>
+      <li class=menu-item><a class=nav-link href="/admin/options">Options</></>
+      <li class=menu-item><a class=nav-link onclick={logout} href="#">Sign out</></>
     </>
   }
 
@@ -62,29 +64,35 @@ module Events {
     body = Dom.get_value(#postBody)
     categoryIdString = Dom.get_value(#postCategory)
     newCategory = Dom.get_value(#postCategoryNew)
-
-
+    author = match (UserModel.get_logged_user()) {
+      case {guest}:
+        "guest"
+      case ~{user}:
+        UserModel.get_name(user)
+    }
+    println(Debug.dump(author))
 
     categoryId = match(String.is_empty(newCategory)) {
 
       case {true} :
-        println(Debug.dump("you used an existing category"))
         categoryId = String.to_int(categoryIdString)
         categoryId
       case {false} :
-        println(Debug.dump("you created a new category"))
-
         // save new category and get id
         categoryId = CategoryModel.new_category(newCategory)
         categoryId
     }
 
-    newPost = ~{title, body, categoryId}
+    newPost = ~{title, body, categoryId, author}
 
     // work on parser from dropbox as a database tutorial at blog.opalang.org
 
-
-    PostModel.set_new_post(newPost)
+    #notice = match (PostModel.set_new_post(newPost)) {
+      case {success: _}:
+        SiteView.alert("Congratulations! Your new post was saved.", "success")
+      case {failure: msg}:
+        SiteView.alert("The post did not save correctly.", "error")
+    }
   }
 }
 
@@ -103,22 +111,37 @@ module PostView {
                 List.map(function(post) {
                   postCategory = /parlance/categories[{ categoryId:post.categoryId  }]/category
                   // println(Debug.dump(postTags))
-                  #allPosts =+  <div class=post-wrapper>
+                  #allPosts =+  <div class="span12 post-wrapper">
                                   <h2 class="post-title heading-text"><a href="/post/{post.postId}">{post.title}</></>
-                                  <p>{post.dateAdded}</>
-                                  <div class="body-copy post-body">{Markdown.xhtml_of_string(Markdown.default_options, post.body)}</>
-                                  <div>category: <a href="/category/{post.categoryId}">{postCategory}</></>
+                                  <div class="row post-row">
+                                    <div class="span3 post-meta">
+                                      <div>By {post.author}</>
+                                      <div>{post.dateAdded}</>
+                                      <div>Category: <a href="/category/{post.categoryId}">{postCategory}</></>
+                                    </>
+                                    <div class="span8 body-copy post-body">{Markdown.xhtml_of_string(Markdown.default_options, post.body)}</>
+                                  </>
                                 </>
                 }, posts)
                 void
     }}></>;
+// <div class="span12 post-wrapper">
+//                 <h2 class="post-title heading-text">{postDetails.title}</>
+//                 <div class="row post-row">
+//                   <div class="span3 post-meta">
+//                     <div class=post-author>By: {postDetails.author}</>
+//                     <div class=post-date>{postDetails.dateAdded}</>
+//                     <div class=post-category>Post Category: <a href="/category/{postDetails.categoryId}">{postDetails.category}</></>
+//                   </>
+//                   <div class="span8 body-copy post-body">{Markdown.xhtml_of_string(Markdown.default_options, postDetails.body)}</>
+//                 </>
+//               </>
     // println(Debug.dump(posts))
     DefaultView.page_template("Post", content, <></>)
   }
 
   // markdown samples and explanation source: http://en.wikipedia.org/wiki/Markdown
   function create_post(allCategories) {
-    // println(Debug.dump(allCategories))
 
     content = <h2 class="post-title heading-text">Create New Post</h2>
               <form class=form-horizontal>
@@ -175,20 +198,15 @@ module PostView {
   }
 
   function single_post(postDetails) {
-// println(Debug.dump(postDetails))
-
-
     content = <div class="span12 post-wrapper">
                 <h2 class="post-title heading-text">{postDetails.title}</>
                 <div class="row post-row">
-                  <div class="span6 post-image-and-meta">
-                    <img src="/resources/img/posts/big-bay-bridge.jpg">
-                    <div class=post-author>Author: </>
+                  <div class="span3 post-meta">
+                    <div class=post-author>By {postDetails.author}</>
                     <div class=post-date>{postDetails.dateAdded}</>
                     <div class=post-category>Post Category: <a href="/category/{postDetails.categoryId}">{postDetails.category}</></>
-
                   </>
-                  <div class="span5 body-copy post-body">{Markdown.xhtml_of_string(Markdown.default_options, postDetails.body)}</>
+                  <div class="span8 body-copy post-body">{Markdown.xhtml_of_string(Markdown.default_options, postDetails.body)}</>
                 </>
               </>
 
@@ -288,9 +306,7 @@ module SignupView {
       match (UserModel.activate_account(activationCode)) {
         case {success: _}:
           SiteView.alert("Your account is activated now.", "success") <+>
-            <div class="well form-wrap">
-              {LoginView.loginForm(_)}
-            </div>
+          <a href="/login">Go Login</>
         case {failure: _}:
           SiteView.alert("Activation code is invalid.", "error")
 

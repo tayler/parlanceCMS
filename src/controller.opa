@@ -10,7 +10,7 @@ module RouteController {
       case "/post/edit/" postId = Rule.integer: PostController.edit_post(postId)
       // case "/delete" : PostController.delete_post()
       case "/category/" categoryId = Rule.integer: PostController.posts_by_category(categoryId)
-      case "/signup" : SignupController.signup()
+      // case "/signup" : SignupController.signup()
       case "/activation/" activationCode = Rule.alphanum_string: SignupController.activation(activationCode)
       case "/login" : LoginController.login()
       case "/admin" : AdminController.dashboard()
@@ -29,7 +29,6 @@ module PostController {
   function create_post() {
     match (UserModel.get_logged_user()) {
       case {guest}:
-        // should redirect to create post when they've logged in
         LoginView.loginForm("/post/create")
       case ~{user}:
         allCategories = CategoryModel.get_all_categories()
@@ -43,7 +42,13 @@ module PostController {
   }
 
   function edit_post(postId) {
-    PostView.edit_post(postId)
+    match (UserModel.get_logged_user()) {
+      case {guest}:
+        LoginView.loginForm("/post/edit")
+      case ~{user}:
+        PostView.edit_post(postId)
+    }
+
   }
 
   // function delete_post() {
@@ -83,11 +88,16 @@ module AdminController {
       case ~{user}:
         AdminView.dashboard()
     }
-
   }
 
   function options() {
-      AdminView.options()
+    match (UserModel.get_logged_user()) {
+      case {guest}:
+        // should redirect to dash when they've logged in
+        LoginView.loginForm("/admin/options")
+      case ~{user}:
+        AdminView.options()
+    }
   }
 }
 
