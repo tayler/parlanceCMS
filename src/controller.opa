@@ -10,7 +10,7 @@ module RouteController {
       case "/post/edit/" postId = Rule.integer: PostController.edit_post(postId)
       // case "/delete" : PostController.delete_post()
       case "/category/" categoryId = Rule.integer: PostController.posts_by_category(categoryId)
-      // case "/signup" : SignupController.signup()
+      case "/signup" : SignupController.signup()
       case "/activation/" activationCode = Rule.alphanum_string: SignupController.activation(activationCode)
       case "/login" : LoginController.login()
       case "/admin" : AdminController.dashboard()
