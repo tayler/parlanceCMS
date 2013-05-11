@@ -11,19 +11,23 @@ abstract type User.info = {
 }
 // so we don't have to pass all the User.info around each time
 type User.t = { Email.email email, User.name username }
-type User.logged = {guest} or {User.t user}
+type User.logged = {guest} or {User.t user }
 // guest is initial value for every user
 private UserContext.t(User.logged) logged_user = UserContext.make({guest})
 
-// type User = {int userId, string username, string password}
-
-// add userId or a post_userId collection
 type Post = { int postId, string title, string body, int categoryId, string author, string dateAdded }
 
-type Comment = {int postId, string comment}
+type Comment = { int postId, string comment }
 // type Post_comment = {int postCommentId, int postId, int commentId}
 
-type Category = {int categoryId, string category}
+type Category = { int categoryId, string category }
+
+type Visit = { int visitId, string url, string title, int visitCount }
+
+database opa_analytics {
+	int /visit_key
+	Visit  /visits[{url}]
+}
 
 database parlance {
 
@@ -205,7 +209,7 @@ module UserModel {
 			<p>Hello {args.username}!</p>
 			<p>Thank you for registering with Parlance.</p>
 			<p>Activate your account by clicking on
-				<a href="http://{Data.main_host}{Data.main_port}/activation/{args.activationCode}">
+				<a href="http://{Data.main_host}/activation/{args.activationCode}">
               		this link
 				</a>.
           	</p>
@@ -264,5 +268,25 @@ module UserModel {
 		UserContext.set(logged_user, {guest})
 	}
 }
+
+module AnalyticsModel {
+	exposed function add_visit(url, title) {
+		x = ?/opa_analytics/visits[~{url}]
+		match(x) {
+			case {none}:
+				/opa_analytics/visit_key++
+				visitId = /opa_analytics/visit_key
+				visit = {~visitId, ~url, ~title, visitCount: 1}
+				/opa_analytics/visits <- visit
+			case {some: page}:
+				/opa_analytics/visits[~{url}]/visitCount++
+		}
+	}
+}
+
+module Data {
+	main_host = "parlancecms.com"
+}
+
 
 
