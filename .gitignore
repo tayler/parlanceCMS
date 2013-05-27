@@ -13,3 +13,5 @@ opa-debug-js
 *.log
 
 .DS_Store
+errors.opa
+parlance-todo.txt
