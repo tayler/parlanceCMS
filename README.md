@@ -3,6 +3,8 @@ parlanceCMS
 
 A blogging CMS built with Opa
 
+See a running copy at parlancecms.com.
+
 Introduction
 ============
 
