@@ -15,4 +15,7 @@ Installation
 ============
 
 1. install Opa: https://github.com/MLstate/opalang/wiki/Getting-started
-2. navigate to parlance root directory, and run the command `make run`
+2. install mongoDB: http://docs.mongodb.org/manual/installation/
+3. download parlanceCMS: https://github.com/tayler/parlanceCMS/archive/master.zip
+4. start mongo in terminal: `mongod` 
+5. navigate to parlance root directory, and run the command `make run`
